@@ -1,0 +1,5 @@
+scikit_learn==1.6.1
+matplotlib==3.10.1
+Requests==2.32.3
+GEOparse==2.0.4
+Flask==3.1.0

@@ -1,3 +1,9 @@
 # Python cache (+ mypy)
 __pycache__/
 .mypy_cache/
+
+# Downloaded GEO data
+tmp/*
+
+# Keep .gitkeep
+!.gitkeep
