@@ -22,7 +22,7 @@ for filename in os.listdir(TMP_FOLDER):
         os.remove(mkpath(TMP_FOLDER, filename))
 
 
-def download_geo_dataset(geo_id: str, pmids: list[int], output: dict[int, str]) -> str:
+def download_geo_dataset(geo_id: str, pmids: list[int], output: dict[int, list[str]]):
     # print(f'Downloading GEO dataset {geo_id}...')
     r = requests.get(f'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={geo_id}&targ=self&form=text&view=brief')
     if r.status_code != 200:
@@ -49,7 +49,7 @@ def download_geo_dataset(geo_id: str, pmids: list[int], output: dict[int, str]) 
 
 
 def get_geo_data(pmids: list[int]) -> dict[int, list[str]]:
-    datasets_by_pmid = defaultdict(list)
+    datasets_by_pmid: dict[int, list[str]] = defaultdict(list)
 
     print(f'Requesting GEO dataset IDs for {len(pmids)} PMIDs...')
     linksets = requests.post(

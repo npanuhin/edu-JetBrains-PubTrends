@@ -12,3 +12,4 @@ flake8-simplify~=0.21.0
 pep8-naming~=0.14.1
 
 mypy~=1.15.0
+types-requests~=2.32.0.20250306
