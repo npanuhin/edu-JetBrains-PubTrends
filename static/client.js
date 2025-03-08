@@ -1,47 +1,55 @@
 const {
     SciChartSurface,
     NumericAxis,
-    FastLineRenderableSeries,
     XyDataSeries,
+    XyScatterRenderableSeries,
     EllipsePointMarker,
-    SweepAnimation,
     SciChartJsNavyTheme,
-    NumberRange,
     MouseWheelZoomModifier,
     ZoomPanModifier,
     ZoomExtentsModifier
 } = SciChart;
 
-const initSciChart = async () => {
-    const { sciChartSurface, wasmContext } = await SciChartSurface.create("scichart-root", {
-        theme: new SciChartJsNavyTheme(),
-        title: "SciChart.js First Chart",
-        titleStyle: { fontSize: 22 }
+const initSciChart = async (points) => {
+    const { wasmContext, sciChartSurface } = await SciChartSurface.create("scichart-root", {
+        theme: new SciChartJsNavyTheme()
     });
 
-    const growBy = new NumberRange(0.1, 0.1);
-    sciChartSurface.xAxes.add(new NumericAxis(wasmContext, { axisTitle: "X Axis", growBy }));
-    sciChartSurface.yAxes.add(new NumericAxis(wasmContext, { axisTitle: "Y Axis", growBy }));
+    // Add the axes to the SciChart surface
+    sciChartSurface.xAxes.add(new NumericAxis(wasmContext, { axisTitle: "PCA Component 1" }));
+    sciChartSurface.yAxes.add(new NumericAxis(wasmContext, { axisTitle: "PCA Component 2" }));
 
-    sciChartSurface.renderableSeries.add(new FastLineRenderableSeries(wasmContext, {
-        stroke: "steelblue",
-        strokeThickness: 3,
-        dataSeries: new XyDataSeries(wasmContext, {
-            xValues: [0,1,2,3,4,5,6,7,8,9],
-            yValues: [0, 0.0998, 0.1986, 0.2955, 0.3894, 0.4794, 0.5646, 0.6442, 0.7173, 0.7833]
+    // Create XyDataSeries with the data points
+    const xValues = points.map(p => p.x);
+    const yValues = points.map(p => p.y);
+
+    const xyDataSeries = new XyDataSeries(wasmContext, {
+        xValues,
+        yValues,
+    });
+
+    // Create ScatterSeries with a point marker (Ellipse) for each data point
+    const scatterSeries = new XyScatterRenderableSeries(wasmContext, {
+        dataSeries: xyDataSeries,
+        pointMarker: new EllipsePointMarker(wasmContext, {
+            width: 10,
+            height: 10,
+            strokeThickness: 2,
+            fill: "steelblue",
+            stroke: "LightSteelBlue",
         }),
-        pointMarker: new EllipsePointMarker(wasmContext, { width: 11, height: 11, fill: "#fff" }),
-        animation: new SweepAnimation({ duration: 300, fadeEffect: true })
-    }));
+    });
 
+    // Add the scatter series to the renderable series collection
+    sciChartSurface.renderableSeries.add(scatterSeries);
+
+    // Add chart modifiers to enable zoom and pan functionality
     sciChartSurface.chartModifiers.add(
         new MouseWheelZoomModifier(),
         new ZoomPanModifier(),
         new ZoomExtentsModifier()
     );
 };
-
-initSciChart();
 
 document.getElementById("submit-btn").addEventListener("click", async () => {
     const pmids = document.getElementById("pmids").value;
@@ -58,11 +66,9 @@ document.getElementById("submit-btn").addEventListener("click", async () => {
     });
 
     const result = await response.json();
-    if (result.imageUrl) {
-        const img = document.createElement("img");
-        img.src = result.imageUrl;
-        img.style.width = "100%";
-        document.getElementById("scichart-root").innerHTML = "";
-        document.getElementById("scichart-root").appendChild(img);
+    console.log(result);
+    if (result) {
+        document.getElementById("scichart-root").innerHTML = ""; // Clear existing chart
+        initSciChart(result); // Initialize new chart with result data
     }
 });

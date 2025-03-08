@@ -63,7 +63,7 @@ def get_geo_data(pmids: list[int]) -> dict[int, list[str]]:
         }
     ).json()['linksets']
 
-    print(f'Parsing GEO dataset IDs...')
+    print('Parsing GEO dataset IDs...')
 
     geo_id_to_pmids = defaultdict(list)
 
@@ -86,7 +86,7 @@ def get_geo_data(pmids: list[int]) -> dict[int, list[str]]:
             geo_id = 'GSE' + str(dataset_id)[1:].lstrip('0')
             geo_id_to_pmids[geo_id].append(pmid)
 
-    print(f'Downloading GEO datasets...')
+    print('Downloading GEO datasets...')
     threads = []
     for geo_id, pmids in geo_id_to_pmids.items():
         t = Thread(target=download_geo_dataset, args=(geo_id, pmids, datasets_by_pmid))

@@ -1,16 +1,30 @@
-from flask import Flask, request, send_file, send_from_directory
-import matplotlib.pyplot as plt
-
+from flask import Flask, request, jsonify, send_from_directory
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
 from src.fetch import get_geo_data
 
 
-def generate_clusters(datasets_by_pmid):
+def optimal_k(tfidf_matrix, max_clusters=10):
+    scores = []
+    min_k = min(2, tfidf_matrix.shape[0])
+
+    for k in range(min_k, min(max_clusters, tfidf_matrix.shape[0]) + 1):
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        labels = kmeans.fit_predict(tfidf_matrix)
+        score = silhouette_score(tfidf_matrix, labels)
+        scores.append((k, score))
+
+    best_k = max(scores, key=lambda x: x[1])[0]
+    return best_k
+
+
+def generate_cluster_data(datasets_by_pmid):
     all_descriptions = []
     pmid_mapping = []
+
     for pmid, descriptions in datasets_by_pmid.items():
         for desc in descriptions:
             all_descriptions.append(desc)
@@ -22,36 +36,25 @@ def generate_clusters(datasets_by_pmid):
     vectorizer = TfidfVectorizer(stop_words='english')
     tfidf_matrix = vectorizer.fit_transform(all_descriptions)
 
-    num_clusters = min(len(all_descriptions), 5)
+    num_clusters = optimal_k(tfidf_matrix)
+
     kmeans = KMeans(n_clusters=num_clusters, random_state=42)
     labels = kmeans.fit_predict(tfidf_matrix)
 
     pca = PCA(n_components=2)
     reduced_matrix = pca.fit_transform(tfidf_matrix.toarray())
 
-    plt.figure(figsize=(12, 8))
-    scatter = plt.scatter(
-        reduced_matrix[:, 0],
-        reduced_matrix[:, 1],
-        c=labels,
-        cmap='viridis',
-        edgecolors='k',
-        alpha=0.7
-    )
+    points = [
+        {
+            'x': float(reduced_matrix[i, 0]),
+            'y': float(reduced_matrix[i, 1]),
+            'cluster_id': int(labels[i]),
+            'pmid': int(pmid_mapping[i])
+        }
+        for i in range(len(all_descriptions))
+    ]
 
-    for i, pmid in enumerate(pmid_mapping):
-        plt.annotate(str(pmid), (reduced_matrix[i, 0], reduced_matrix[i, 1]), fontsize=7, alpha=0.7)
-
-    plt.title('Clusters of GEO Datasets based on TF-IDF')
-    plt.xlabel('PCA Component 1')
-    plt.ylabel('PCA Component 2')
-    cbar = plt.colorbar(scatter)
-    cbar.set_label('Cluster Label')
-
-    img_path = 'clusters.png'
-    plt.savefig(img_path)
-    plt.close()
-    return img_path
+    return points
 
 
 app = Flask(__name__, static_folder='static')
@@ -76,23 +79,23 @@ def client_js():
 def run():
     data = request.get_json()
     if not isinstance(data, dict) or not isinstance(data.get('pmids'), str):
-        return {'error': 'Missing "pmids" field in request'}, 400
+        return jsonify({'error': 'Missing "pmids" field in request'}), 400
 
     try:
         pmids = list(map(int, data['pmids'].split(',')))
     except ValueError:
-        return {"error": "Invalid PMIDs provided"}, 400
+        return jsonify({'error': 'Invalid PMIDs provided'}), 400
 
     if not pmids:
-        return {"error": "No valid PMIDs provided"}, 400
+        return jsonify({'error': 'No valid PMIDs provided'}), 400
 
     datasets_by_pmid = get_geo_data(pmids)
-    img_path = generate_clusters(datasets_by_pmid)
+    points = generate_cluster_data(datasets_by_pmid)
 
-    if not img_path:
-        return {'error': 'No relevant GEO datasets found'}, 404
+    if not points:
+        return jsonify({'error': 'No relevant GEO datasets found'}), 404
 
-    return send_file(img_path, mimetype='image/png')
+    return jsonify(points)
 
 
 if __name__ == '__main__':
