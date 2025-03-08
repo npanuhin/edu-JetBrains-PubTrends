@@ -88,13 +88,37 @@ input, textarea {
 	text-transform: uppercase;
 	text-align: center;
 	transition: background-color 0.02s, font-size 0.02s, padding 0.02s;
+
+	transition: all 0.3s ease;
 }
 
-#submit-btn:hover {
+#submit-btn:disabled {
+	background-color: gray;
+	cursor: not-allowed;
+}
+
+#submit-btn.loading {
+	background-color: #ff8c00;
+	animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		background-color: #ffa500;
+	}
+	50% {
+		background-color: #ff8c00;
+	}
+	100% {
+		background-color: #ffa500;
+	}
+}
+
+#submit-btn:not(.loading):hover {
 	background-color: #ff8c00;
 }
 
-#submit-btn:active {
+#submit-btn:not(.loading):active {
 	background-color: #d2691e;
 	font-size: 17px;
 	padding: 14.5px;

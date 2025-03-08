@@ -17,8 +17,7 @@ def optimal_k(tfidf_matrix, max_clusters=10):
         score = silhouette_score(tfidf_matrix, labels)
         scores.append((k, score))
 
-    best_k = max(scores, key=lambda x: x[1])[0]
-    return best_k
+    return max(scores, key=lambda x: x[1])[0]
 
 
 def generate_cluster_data(datasets_by_pmid):
@@ -44,7 +43,7 @@ def generate_cluster_data(datasets_by_pmid):
     pca = PCA(n_components=2)
     reduced_matrix = pca.fit_transform(tfidf_matrix.toarray())
 
-    points = [
+    return [
         {
             'x': float(reduced_matrix[i, 0]),
             'y': float(reduced_matrix[i, 1]),
@@ -53,8 +52,6 @@ def generate_cluster_data(datasets_by_pmid):
         }
         for i in range(len(all_descriptions))
     ]
-
-    return points
 
 
 app = Flask(__name__, static_folder='static')
