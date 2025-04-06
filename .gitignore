@@ -2,8 +2,14 @@
 __pycache__/
 .mypy_cache/
 
+# Python environment
+.venv/
+.env/
+
+# JetBrains IDE
+/.idea/
+
 # Downloaded GEO data
 tmp/*
 
-# Keep .gitkeep
 !.gitkeep
